@@ -1,11 +1,11 @@
-#ifndef SOUNDEX_H
-#define SOUNDEX_H
+
 
 #include "Soundex.h"
 #include <ctype.h>
 #include <string.h>
+#define MAX_CODE_LENGTH 4
 
-char getSoundexCode(char c) {
+char getSoundexCode(char c) {        // Function to map a character to its corresponding Soundex digit
     c = toupper(c);
     switch (c) {
         case 'B': case 'F': case 'P': case 'V': return '1';
@@ -17,24 +17,80 @@ char getSoundexCode(char c) {
         default: return '0'; // For A, E, I, O, U, H, W, Y
     }
 }
-
-void generateSoundex(const char *name, char *soundex) {
-    int len = strlen(name);
-    soundex[0] = toupper(name[0]);
-    int sIndex = 1;
-
-    for (int i = 1; i < len && sIndex < 4; i++) {
-        char code = getSoundexCode(name[i]);
-        if (code != '0' && code != soundex[sIndex - 1]) {
-            soundex[sIndex++] = code;
+// Function to remove vowels and specific consonants
+void removeVowelsAndSpecificConsonants(const char *input, char *output) {
+    int j = 0;
+    for (int i = 0; input[i] != '\0'; i++) {
+        char c = toupper(input[i]);
+        if (c != 'A' && c != 'E' && c != 'I' && c != 'O' && c != 'U' && c != 'Y' && c != 'H' && c != 'W') {
+            output[j++] = c;
         }
     }
-
-    while (sIndex < 4) {
-        soundex[sIndex++] = '0';
-    }
-
-    soundex[4] = '\0';
+    output[j] = '\0';
 }
 
-#endif // SOUNDEX_H
+// Function to encode the string to Soundex digits
+void encodeToSoundexDigits(const char *input, char *output) {
+    int j = 0;
+    char lastDigit = '\0';
+    for (int i = 0; input[i] != '\0'; i++) {
+        char currentDigit = getSoundexCode(input[i]);
+        if (currentDigit != '0' && currentDigit != lastDigit) {
+            output[j++] = currentDigit;
+            lastDigit = currentDigit;
+        }
+    }
+    output[j] = '\0';
+}
+
+// Function to generate the Soundex code
+void generateSoundexCode(const char *input, char *output) {
+    // Retain the first letter and convert to uppercase
+    output[0] = toupper(input[0]);
+
+    // Remove vowels and specific consonants
+    char filteredInput[100];
+    removeVowelsAndSpecificConsonants(input, filteredInput);
+
+    // Encode to Soundex digits
+    char encodedDigits[100];
+    encodeToSoundexDigits(filteredInput, encodedDigits);
+
+    // Copy the encoded digits to the output
+    strncpy(output + 1, encodedDigits, MAX_CODE_LENGTH - 1);
+
+    // Pad with zeros if necessary
+    int len = strlen(output);
+    while (len < MAX_CODE_LENGTH) {
+        output[len++] = '0';
+    }
+
+    // Null-terminate the output string
+    output[MAX_CODE_LENGTH] = '\0';
+}
+
+// Function to run tests
+void runTests() {
+    struct {
+        const char *input;
+        const char *expected;
+    } testCases[] = {
+        {"Singh", "S520"},
+        {"Patel", "P340"},
+        {"Sharma", "S650"},
+        {"Gupta", "G130"},
+        {"Reddy", "R300"}
+    };
+
+    int numTests = sizeof(testCases) / sizeof(testCases[0]);
+    for (int i = 0; i < numTests; i++) {
+        char output[MAX_CODE_LENGTH + 1];
+        generateSoundexCode(testCases[i].input, output);
+        printf("Input: %s, Expected: %s, Output: %s\n", testCases[i].input, testCases[i].expected, output);
+    }
+}
+
+int main() {
+    runTests();
+    return 0;
+}
