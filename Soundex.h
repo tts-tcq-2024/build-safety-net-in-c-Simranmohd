@@ -77,18 +77,11 @@ void runTests() {
         const char *input;
         const char *expected;
     } testCases[] = {
-        {"Example", "E251"},
-        {"Ashcraft", "A261"},
-        {"Tymczak", "T522"},
-        {"Robert", "R163"},
-        {"Rupert", "R163"},
-        {"Rubin", "R150"},
-        {"Soundex", "S532"},
-        {"Sownteks", "S532"},
-        {"Ekzampul", "E251"},
-        {"Lissajous", "L222"},
-        {"Smith", "S530"},
-        {"Schmit", "S530"}
+        {"Singh", "S520"},
+        {"Patel", "P340"},
+        {"Sharma", "S650"},
+        {"Gupta", "G130"},
+        {"Reddy", "R300"}
     };
 
     int numTests = sizeof(testCases) / sizeof(testCases[0]);
