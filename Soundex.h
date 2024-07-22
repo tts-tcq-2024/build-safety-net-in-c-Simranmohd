@@ -3,6 +3,8 @@
 #include "Soundex.h"
 #include <ctype.h>
 #include <string.h>
+#include <stdio.h>
+
 #define MAX_CODE_LENGTH 4
 
 char getSoundexCode(char c) {        // Function to map a character to its corresponding Soundex digit
