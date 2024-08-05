@@ -1,98 +1,96 @@
+#ifndef SOUNDEX_H
+#define SOUNDEX_H
 
-
-#include "Soundex.h"
 #include <ctype.h>
 #include <string.h>
-#include <stdio.h>
 
-#define MAX_CODE_LENGTH 4
-
-char getSoundexCode(char c) {        // Function to map a character to its corresponding Soundex digit
-    c = toupper(c);
-    switch (c) {
-        case 'B': case 'F': case 'P': case 'V': return '1';
-        case 'C': case 'G': case 'J': case 'K': case 'Q': case 'S': case 'X': case 'Z': return '2';
-        case 'D': case 'T': return '3';
-        case 'L': return '4';
-        case 'M': case 'N': return '5';
-        case 'R': return '6';
-        default: return '0'; // For A, E, I, O, U, H, W, Y
-    }
-}
-// Function to remove vowels and specific consonants
-void removeVowelsAndSpecificConsonants(const char *input, char *output) {
-    int j = 0;
-    for (int i = 0; input[i] != '\0'; i++) {
-        char c = toupper(input[i]);
-        if (c != 'A' && c != 'E' && c != 'I' && c != 'O' && c != 'U' && c != 'Y' && c != 'H' && c != 'W') {
-            output[j++] = c;
-        }
-    }
-    output[j] = '\0';
-}
-
-// Function to encode the string to Soundex digits
-void encodeToSoundexDigits(const char *input, char *output) {
-    int j = 0;
-    char lastDigit = '\0';
-    for (int i = 0; input[i] != '\0'; i++) {
-        char currentDigit = getSoundexCode(input[i]);
-        if (currentDigit != '0' && currentDigit != lastDigit) {
-            output[j++] = currentDigit;
-            lastDigit = currentDigit;
-        }
-    }
-    output[j] = '\0';
-}
-
-// Function to generate the Soundex code
-void generateSoundexCode(const char *input, char *output) {
-    // Retain the first letter and convert to uppercase
-    output[0] = toupper(input[0]);
-
-    // Remove vowels and specific consonants
-    char filteredInput[100];
-    removeVowelsAndSpecificConsonants(input, filteredInput);
-
-    // Encode to Soundex digits
-    char encodedDigits[100];
-    encodeToSoundexDigits(filteredInput, encodedDigits);
-
-    // Copy the encoded digits to the output
-    strncpy(output + 1, encodedDigits, MAX_CODE_LENGTH - 1);
-
-    // Pad with zeros if necessary
-    int len = strlen(output);
-    while (len < MAX_CODE_LENGTH) {
-        output[len++] = '0';
-    }
-
-    // Null-terminate the output string
-    output[MAX_CODE_LENGTH] = '\0';
-}
-
-// Function to run tests
-void runTests() {
-    struct {
-        const char *input;
-        const char *expected;
-    } testCases[] = {
-        {"Singh", "S520"},
-        {"Patel", "P340"},
-        {"Sharma", "S650"},
-        {"Gupta", "G130"},
-        {"Reddy", "R300"}
+char getSoundexCode(char c) {
+    static const char soundexTable[26] = {
+        '0', '1', '2', '3', '0', '1', '2', '0', '0', '2', '2', '4', '5', '5', '0', '1', '2', '6', '2', '3', '0', '1', '0', '2', '0', '2'
     };
 
-    int numTests = sizeof(testCases) / sizeof(testCases[0]);
-    for (int i = 0; i < numTests; i++) {
-        char output[MAX_CODE_LENGTH + 1];
-        generateSoundexCode(testCases[i].input, output);
-        printf("Input: %s, Expected: %s, Output: %s\n", testCases[i].input, testCases[i].expected, output);
+    c = toupper(c);
+    if (c < 'A' || c > 'Z') {
+        return '0';
+    }
+
+    return soundexTable[c - 'A'];
+}
+
+char extractAndCapitalizeInitial(const char *name) {
+    return toupper(name[0]);
+}
+
+void fillWithZeros(char *soundex, int *index) {
+    while (*index < 4) {
+        soundex[(*index)++] = '0';
+    }
+    soundex[4] = '\0';
+}
+
+int isCodeDuplicate(char currentCode, char previousCode) {
+    return currentCode == previousCode && currentCode != '0';
+}
+
+void appendSoundexCode(char *soundex, int *index, char code) {
+    if (*index < 4) {
+        soundex[(*index)++] = code;
     }
 }
 
-int main() {
-    runTests();
-    return 0;
+int shouldEncode(char currentCode, char lastCode) {
+    return currentCode != '0' && !isCodeDuplicate(currentCode, lastCode);
 }
+
+void updateLastCode(char currentCode, char *lastCode) {
+    if (currentCode != '0') {
+        *lastCode = currentCode;
+    }
+}
+
+void processCharacter(char character, char *soundex, int *index, char *lastCode) {
+    char currentCode = getSoundexCode(character);
+    if (shouldEncode(currentCode, *lastCode)) {
+        appendSoundexCode(soundex, index, currentCode);
+    }
+    updateLastCode(currentCode, lastCode);
+}
+
+void processRemainingLetters(const char *name, char *soundex, int *index, char *lastCode) {
+    for (int i = 1; name[i] != '\0'; i++) {
+        processCharacter(name[i], soundex, index, lastCode);
+    }
+}
+
+int isNullOrEmpty(const char *name) {
+    return name == NULL || strlen(name) == 0;
+}
+
+int isInvalidInput(const char *name, char *soundex) {
+    return soundex == NULL || isNullOrEmpty(name);
+}
+
+void handleEmptyOrNullInput(const char *name, char *soundex) {
+    if (isInvalidInput(name, soundex)) {
+        soundex[0] = '\0';
+    }
+}
+
+void generateSoundex(const char *name, char *soundex) {
+    handleEmptyOrNullInput(name, soundex);
+    if (soundex[0] == '\0') {
+        return;
+    }
+
+    soundex[0] = extractAndCapitalizeInitial(name);
+    int index = 1;
+    char lastCode = getSoundexCode(name[0]);
+
+    processRemainingLetters(name, soundex, &index, &lastCode);
+    fillWithZeros(soundex, &index);
+}
+
+#endif // SOUNDEX_H
+
+
+
